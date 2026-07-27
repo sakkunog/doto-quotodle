@@ -21,6 +21,12 @@ let diction = [
     'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/8_letter_words.txt'
 ];
 
+let keyboard = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ["Enter",'Z','X','C','V','B','N','M',"Backspace"]
+];
+
 const btnDaily = document.getElementById('daily-btn');
 const btnRnd = document.getElementById('rnd-btn');
 
@@ -70,11 +76,21 @@ async function generateGame(type) {
             for (let i = 0; i < today.length; i++) {
                 hash = today.charCodeAt(i) + ((hash << 5) - hash);
             }
-            const index = Math.abs(hash) % dataRows.length;
+            
+            let index = Math.abs(hash) % dataRows.length;
+            let attempts = 0;
+            
             selectedRow = dataRows[index];
+            while ((!selectedRow[4] || selectedRow[4].trim() === '') && attempts < dataRows.length) {
+                index = (index + 1) % dataRows.length;
+                selectedRow = dataRows[index];
+                attempts++;
+            }
         } else {
-            const randomIndex = Math.floor(Math.random() * dataRows.length);
-            selectedRow = dataRows[randomIndex];
+            do {
+                const randomIndex = Math.floor(Math.random() * dataRows.length);
+                selectedRow = dataRows[randomIndex];
+            } while (!selectedRow[4] || selectedRow[4].trim() === '');
         }
 
         const [number, author, year, quote, answerWord, flavour = ""] = selectedRow;
@@ -95,17 +111,12 @@ async function generateGame(type) {
         quoteNum = number
         
         createBoard(word, totalGuesses);
+        createKeyboard(keyboard);
 
     } catch (error) {
         console.error("Error processing TSV:", error);
     }
 }
-
-let keyboard = [
-    ['Q','W','E','R','T','Y','U','I','O','P'],
-    ['A','S','D','F','G','H','J','K','L'],
-    ["Enter",'Z','X','C','V','B','N','M',"Backspace"]
-];
 
 function createBoard(word, rows) {
     colourGuess = new Array(word.length);
@@ -130,6 +141,7 @@ function createBoard(word, rows) {
 }
 
 function createKeyboard(keyboard) {
+    Kboard.innerHTML = '';
     Kboard.addEventListener('click', (event) => {
         if (event.target.classList.contains('key-button')) {
             const key = event.target.textContent;
@@ -231,8 +243,6 @@ function btnPress(key) {
     }
     }
 }
-
-
 
 console.log(grid);
 createKeyboard(keyboard);
