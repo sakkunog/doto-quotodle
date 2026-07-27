@@ -142,12 +142,6 @@ function createBoard(word, rows) {
 
 function createKeyboard(keyboard) {
     Kboard.innerHTML = '';
-    Kboard.addEventListener('click', (event) => {
-        if (event.target.classList.contains('key-button')) {
-            const key = event.target.textContent;
-            btnPress(key);
-        }
-    });
     for (let i = 0; i < keyboard.length; i++) {
             let row = document.createElement('div');
             row.style.display = 'grid'; 
@@ -167,6 +161,13 @@ document.addEventListener('keydown', (event) => {
         const key = event.key;
         btnPress(key);
     }
+});
+
+Kboard.addEventListener('click', (event) => {
+        if (event.target.classList.contains('key-button')) {
+            const key = event.target.textContent;
+            btnPress(key);
+        }
 });
 
 function btnPress(key) {
@@ -245,7 +246,6 @@ function btnPress(key) {
 }
 
 console.log(grid);
-createKeyboard(keyboard);
 generateGame('daily');
 
 btnDaily.addEventListener('click', () => {
