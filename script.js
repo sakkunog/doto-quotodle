@@ -1,27 +1,31 @@
 const board = document.getElementById('game-board');
 const Kboard = document.getElementById('keyboard');
 let isGame = true;
+let quoteNum = 0;
 let rawWord = 'wordl';
 let word = rawWord.replace(/\s/g, "").toUpperCase();
 let guessWord = '';
 let currentGuess = 0;
 const totalGuesses = 6;
 let grid = [];
+let colourGuess = [];
 
 let validWordsList = [];
 let diction = [
+    'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/2_letter_words.txt',
     'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/3_letter_words.txt',
     'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/4_letter_words.txt',
     'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/5_letter_words.txt',
     'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/6_letter_words.txt',
-    'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/7_letter_words.txt'
+    'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/7_letter_words.txt',
+    'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/8_letter_words.txt'
 ];
 
 const btnDaily = document.getElementById('daily-btn');
 const btnRnd = document.getElementById('rnd-btn');
 
 async function loadDictionary(word) {
-    const listWords = diction[word.length-3];
+    const listWords = diction[word.length-2];
     try {
         const output = await fetch(listWords);
         if (!output.ok) throw new Error("Failed to load online TXT");
@@ -80,11 +84,15 @@ async function generateGame(type) {
 
         await loadDictionary(word);
 
-        const formattedQuote = quote.replace('$$ITEM$$', '_'.repeat(rawWord.length));
-        const finalQuestionText = `${formattedQuote} - ${author}, ${year}`;
+        const formattedQuote = quote.replaceAll('$$ITEM$$', '_'.repeat(rawWord.length) + "<sub>" + rawWord.length + "</sub>");
+        const finalQuestionText = `Quote #${'-'.repeat(number.length)} <br> ${formattedQuote} <br><br> - ${author}, ${year}`;
+        const formattedFlavour = flavour.replaceAll('$$ITEM$$', '_'.repeat(rawWord.length));
 
         const questionEl = document.querySelector('#game-question h1');
-        if (questionEl) questionEl.textContent = finalQuestionText;
+        const quoteFl = document.querySelector('#game-flavour h3');
+        if (questionEl) questionEl.innerHTML = finalQuestionText;
+        if (quoteFl) quoteFl.innerHTML = formattedFlavour;
+        quoteNum = number
         
         createBoard(word, totalGuesses);
 
@@ -100,6 +108,7 @@ let keyboard = [
 ];
 
 function createBoard(word, rows) {
+    colourGuess = new Array(word.length);
     for (let i = 0; i < rows; i++) {
         let rowArray = [];
         let row = document.createElement('div');
@@ -111,7 +120,7 @@ function createBoard(word, rows) {
                 block.classList.add('letter-box');
                 rowArray.push(block);
             } else {
-                block.classList.add('empty-letter-box');
+                block.classList.add('air');
             }
             row.append(block);
         }
@@ -149,38 +158,81 @@ document.addEventListener('keydown', (event) => {
 });
 
 function btnPress(key) {
-    if ((key === 'Enter' && guessWord.length === word.length && isGame === true)
-    && (validWordsList.includes(guessWord) || word === guessWord)) {
-        let letters = word.split('')
-        for (let i = 0; i < guessWord.length; i++) {
-            if (grid[currentGuess][i].textContent === word[i]) {
-                grid[currentGuess][i].style.backgroundColor = "MediumSeaGreen";
-                letters.splice(letters.indexOf(guessWord[i]), 1);
+    if (isGame) {
+        if (key === 'Enter' && guessWord.length === word.length) {
+        if (validWordsList.includes(guessWord) || word === guessWord) {
+            let letters = word.split('')
+            for (let i = 0; i < guessWord.length; i++) {
+                if (grid[currentGuess][i].textContent === word[i]) {
+                    colourGuess[i] = "MediumSeaGreen";
+                    letters.splice(letters.indexOf(guessWord[i]), 1);
+                }
+            };
+            for (let i = 0; i < guessWord.length; i++) {
+                if (letters.includes(grid[currentGuess][i].textContent) && 
+                    !(grid[currentGuess][i].textContent === word[i])) {
+                        colourGuess[i] = "Orange";
+                        letters.splice(letters.indexOf(guessWord[i]), 1)
+                } else if ((grid[currentGuess][i].textContent !== word[i]) &&
+                    !(letters.includes(grid[currentGuess][i].textContent))) {
+                        colourGuess[i] = "DimGray";
+                        Array.from(Kboard.querySelectorAll('.key-button')).find(b => b.textContent === guessWord[i]).style.backgroundColor = "DimGray";
+                }
             }
-        };
-        for (let i = 0; i < guessWord.length; i++) {
-            if (letters.includes(grid[currentGuess][i].textContent) && 
-                !(grid[currentGuess][i].textContent === word[i])) {
-                grid[currentGuess][i].style.backgroundColor = "Orange";
-                letters.splice(letters.indexOf(guessWord[i]), 1)
-            } else if ((grid[currentGuess][i].textContent !== word[i]) &&
-                !(letters.includes(grid[currentGuess][i].textContent))) {
-                grid[currentGuess][i].style.backgroundColor = "DimGray";
-                Array.from(Kboard.querySelectorAll('.key-button')).find(b => b.textContent === guessWord[i]).style.backgroundColor = "DimGray";
+            for (let i = 0; i < guessWord.length; i++) {
+                const tile = grid[currentGuess][i];
+                tile.style.backgroundColor = ""; 
+
+                tile.style.animationDelay = `${i * 0.2}s`;
+                tile.classList.remove('tile-flip');
+                void tile.offsetWidth;
+                tile.classList.add('tile-flip');
+
+                setTimeout(() => {
+                    tile.style.backgroundColor = colourGuess[i];
+                }, (i * 200) + 300);
             }
+            if (guessWord.toUpperCase() !== word.toUpperCase()) {
+                guessWord = '';
+            } else {
+                const tile = grid[currentGuess][0];
+                setTimeout(() => {
+                    tile.parentElement.classList.remove('enlarge-row');
+                    void tile.parentElement.offsetWidth;
+                    tile.parentElement.classList.add('enlarge-row');
+                    isGame = false;
+
+                    let questionEl = document.querySelector('#game-question h1');
+                    let quoteFl = document.querySelector('#game-flavour h3');
+                    const afterQuote = questionEl.innerHTML.replaceAll(/_+\d*(?:<sub>\d+<\/sub>)?/g , "<u>"+rawWord+"</u>").replace(/#(-+)/g, "#"+quoteNum);
+                    const afterFlavour = quoteFl.textContent.replaceAll(/_+/g , "<u>"+rawWord+"</u>");
+                    if (questionEl) questionEl.innerHTML = afterQuote;
+                    if (quoteFl) quoteFl.innerHTML = afterFlavour;
+                }, ((guessWord.length - 1) * 200) + 600);
+            }
+            currentGuess += 1;
+        } else {
+            grid[currentGuess][0].parentElement.classList.remove('shake-row');
+            void grid[currentGuess][0].parentElement.offsetWidth;
+            grid[currentGuess][0].parentElement.classList.add('shake-row');
         }
-        currentGuess += 1;
-        if (guessWord.toUpperCase() !== word.toUpperCase()) {
-            guessWord = '';
-        } else { isGame = false; }
     } else if (key === 'Backspace' && guessWord.length > 0) {
+        grid[currentGuess][guessWord.length-1].classList.remove('filled');
         grid[currentGuess][guessWord.length-1].textContent = "";
         guessWord = guessWord.slice(0, -1);
     } else if (/^[a-zA-Z]$/.test(key) && guessWord.length < word.length) {
+        grid[currentGuess][guessWord.length].classList.add('filled');
         grid[currentGuess][guessWord.length].textContent = key.toUpperCase();
+        grid[currentGuess][guessWord.length].classList.remove('enlarge-row');
+                void grid[currentGuess][guessWord.length].offsetWidth;
+                grid[currentGuess][guessWord.length].style.setProperty('--duration', '0.05s');
+                grid[currentGuess][guessWord.length].classList.add('enlarge-row');
         guessWord += key.toUpperCase();
     }
+    }
 }
+
+
 
 console.log(grid);
 createKeyboard(keyboard);
@@ -188,7 +240,9 @@ generateGame('daily');
 
 btnDaily.addEventListener('click', () => {
     generateGame('daily');
+    btnDaily.blur();
 });
 btnRnd.addEventListener('click', () => {
     generateGame('random');
+    btnRnd.blur();
 });
