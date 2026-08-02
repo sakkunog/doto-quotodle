@@ -71,7 +71,9 @@ async function generateGame(type) {
         let selectedRow;
 
         if (type === 'daily') {
-            const today = new Date().toISOString().slice(0, 10);
+            const d = new Date();
+            const today = `${d.getFullYear}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDay()).padStart(2, '0')}`
+
             let hash = 0;
             for (let i = 0; i < today.length; i++) {
                 hash = today.charCodeAt(i) + ((hash << 5) - hash);
