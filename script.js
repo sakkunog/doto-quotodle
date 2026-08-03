@@ -1,7 +1,7 @@
 const board = document.getElementById('game-board');
 const Kboard = document.getElementById('keyboard');
 let isGame = true;
-let quoteNum = 0;
+let quoteNum = "";
 let rawWord = 'wordl';
 let word = rawWord.replace(/\s/g, "").toUpperCase();
 let guessWord = '';
@@ -20,6 +20,7 @@ let diction = [
     'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/7_letter_words.txt',
     'https://raw.githubusercontent.com/mstgnz/words/refs/heads/main/lang/en/length/8_letter_words.txt'
 ];
+let savedDataRows = null;
 
 let keyboard = [
     ['Q','W','E','R','T','Y','U','I','O','P'],
@@ -48,13 +49,8 @@ async function loadDictionary(word) {
     }
 }
 
-async function generateGame(type) {
-    if (!isGame && type !== 'daily' && type !== 'random') return;
-    isGame = true;
-    currentGuess = 0;
-    guessWord = '';
-    grid = [];
-    board.innerHTML = '';
+async function loadQuotesData() {
+    if (savedDataRows) return savedDataRows;
     
     try {
         const response = await fetch('quotes.tsv');
@@ -65,14 +61,31 @@ async function generateGame(type) {
             .split(/\r?\n/)
             .map(row => row.split('\t'));
 
-        const dataRows = rows.slice(1);
+        savedDataRows = rows.slice(1);
+        return savedDataRows;
+    } catch (error) {
+        console.error("Error loading TSV:", error);
+        return [];
+    }
+}
+
+async function generateGame(type) {
+    if (!isGame && type !== 'daily' && type !== 'random' && typeof type !== 'string' && typeof type !== 'number') return;
+    isGame = true;
+    currentGuess = 0;
+    guessWord = '';
+    grid = [];
+    board.innerHTML = '';
+    
+    try {
+        const dataRows = await loadQuotesData();
         if (dataRows.length === 0) return;
 
         let selectedRow;
 
         if (type === 'daily') {
             const d = new Date();
-            const today = `${d.getFullYear}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDay()).padStart(2, '0')}`
+            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
             let hash = 0;
             for (let i = 0; i < today.length; i++) {
@@ -88,11 +101,20 @@ async function generateGame(type) {
                 selectedRow = dataRows[index];
                 attempts++;
             }
-        } else {
+        } else if (type === 'random') {
             do {
                 const randomIndex = Math.floor(Math.random() * dataRows.length);
                 selectedRow = dataRows[randomIndex];
             } while (!selectedRow[4] || selectedRow[4].trim() === '');
+        } else {
+            const targetNum = String(type).trim();
+            selectedRow = dataRows.find(row => row[0].trim() === targetNum);
+            
+            if (!selectedRow || !selectedRow[4] || selectedRow[4].trim() === '') {
+                console.warn(`Quote number ${targetNum} not found or has an empty answer.`);
+                isGame = false; 
+                return;
+            }
         }
 
         const [number, author, year, quote, answerWord, flavour = ""] = selectedRow;
@@ -110,13 +132,13 @@ async function generateGame(type) {
         const quoteFl = document.querySelector('#game-flavour h3');
         if (questionEl) questionEl.innerHTML = finalQuestionText;
         if (quoteFl) quoteFl.innerHTML = formattedFlavour;
-        quoteNum = number
+        quoteNum = number;
         
         createBoard(word, totalGuesses);
         createKeyboard(keyboard);
 
     } catch (error) {
-        console.error("Error processing TSV:", error);
+        console.error("Error processing game generation:", error);
     }
 }
 
