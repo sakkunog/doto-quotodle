@@ -110,3 +110,7 @@
 body {
     touch-action: manipulation;
 }
+
+* {
+    font-family: 'Comic Relief';font-size: 22px;
+}
