@@ -46,28 +46,24 @@ function saveCurrentGrid() {
     const gameData = {
         savedQuote: [currentGuess, theQuote.number, today],
         savedGrid: [
-            answerGrid,
+            answerGrid.map(row => row.map(tile => tile.textContent)),
             colourGrid,
             keyBoard.innerHTML,
             gameBoard.innerHTML
         ],
-        savedUser: [
-            username,
-            dailyCombo,
-            currentCombo
-        ],
-        completedQuotes: completedQuotes
+        savedUser: [username, dailyCombo, currentCombo],
+        completedQuotes
     };
 
     localStorage.setItem('gameData', JSON.stringify(gameData));
-    console.log("complete saved!");
-    console.log(localStorage.getItem('gameData'));
 }
 
 function loadCurrentGrid() {
     const saved = localStorage.getItem('gameData');
 
-    if (!saved) console.log("failed LOAD!");return null;
+    if (!saved) {
+        return null;
+    }
 
     const {
         savedQuote,
@@ -79,7 +75,6 @@ function loadCurrentGrid() {
     if (savedGrid) {
         keyBoard.innerHTML = savedGrid[2];
         gameBoard.innerHTML = savedGrid[3];
-        console.log("saved GRDIS!");
     }
 
     return {
@@ -90,14 +85,14 @@ function loadCurrentGrid() {
                 savedDate: savedQuote[2]
             }
             : null,
+
         savedGrid: savedGrid
             ? {
                 answerGrid: savedGrid[0],
-                colourGrid: savedGrid[1],
-                keyBoard: keyBoard,
-                gameBoard: gameBoard
+                colourGrid: savedGrid[1]
             }
             : null,
+
         savedUser: savedUser
             ? {
                 username: savedUser[0],
@@ -105,6 +100,7 @@ function loadCurrentGrid() {
                 savedCombo: savedUser[2]
             }
             : null,
+
         completedQuotes: savedCompleted || []
     };
 }
@@ -308,59 +304,61 @@ document.addEventListener('click', event => {
     }
 });
 
+function colourFlip(currentAnswer, thisGuess, cleanAnswer, letters) {
+    for (let i = 0; i < currentAnswer.length; i++) {
+        if (currentAnswer[i] === cleanAnswer[i]) {
+            colourGrid[thisGuess][i] = "MediumSeaGreen";
+                letters.splice(letters.indexOf(currentAnswer[i]), 1);
+            }
+    }
+
+    for (let i = 0; i < currentAnswer.length; i++) {
+        if (colourGrid[thisGuess][i] === "MediumSeaGreen") continue;
+
+            const char = currentAnswer[i];
+
+            if (letters.includes(char)) {
+                colourGrid[thisGuess][i] = "Orange";
+                letters.splice(letters.indexOf(char), 1);
+            } else {
+                colourGrid[thisGuess][i] = "DimGray";
+
+                const keyBtn = Array.from(
+                    keyBoard.querySelectorAll('.key-button')
+                ).find(b => b.textContent === char);
+
+                if (keyBtn) {
+                    keyBtn.style.backgroundColor = "DimGray";
+                }
+            }
+        }
+
+    for (let i = 0; i < currentAnswer.length; i++) {
+        const tile = answerGrid[thisGuess][i];
+
+        tile.style.backgroundColor = "";
+        tile.style.animationDelay = `${i * 0.2}s`;
+        tile.classList.remove('tile-flip');
+
+        void tile.offsetWidth;
+
+        tile.classList.add('tile-flip');
+
+        setTimeout(() => {
+            tile.style.backgroundColor = colourGrid[thisGuess][i];
+        }, (i * 200) + 300);
+    }
+}
+
 function keyPress(key) {
     if (gameState != 1) return;
-
     const cleanAnswer = theQuote.answer.replace(/\s+/g, '').toUpperCase();
-
     if (key == "Enter" && cleanAnswer.length == currentAnswer.length) {
         if (currentWords.includes(currentAnswer) || cleanAnswer == currentAnswer) {
             const thisGuess = currentGuess;
             let letters = cleanAnswer.split('');
 
-            for (let i = 0; i < currentAnswer.length; i++) {
-                if (currentAnswer[i] === cleanAnswer[i]) {
-                    colourGrid[thisGuess][i] = "MediumSeaGreen";
-                    letters.splice(letters.indexOf(currentAnswer[i]), 1);
-                }
-            }
-
-            for (let i = 0; i < currentAnswer.length; i++) {
-                if (colourGrid[thisGuess][i] === "MediumSeaGreen") continue;
-
-                const char = currentAnswer[i];
-
-                if (letters.includes(char)) {
-                    colourGrid[thisGuess][i] = "Orange";
-                    letters.splice(letters.indexOf(char), 1);
-                } else {
-                    colourGrid[thisGuess][i] = "DimGray";
-
-                    const keyBtn = Array.from(
-                        keyBoard.querySelectorAll('.key-button')
-                    ).find(b => b.textContent === char);
-
-                    if (keyBtn) {
-                        keyBtn.style.backgroundColor = "DimGray";
-                    }
-                }
-            }
-
-            for (let i = 0; i < currentAnswer.length; i++) {
-                const tile = answerGrid[thisGuess][i];
-
-                tile.style.backgroundColor = "";
-                tile.style.animationDelay = `${i * 0.2}s`;
-                tile.classList.remove('tile-flip');
-
-                void tile.offsetWidth;
-
-                tile.classList.add('tile-flip');
-
-                setTimeout(() => {
-                    tile.style.backgroundColor = colourGrid[thisGuess][i];
-                }, (i * 200) + 300);
-            }
+            colourFlip(currentAnswer, thisGuess, cleanAnswer, letters);
 
             if (currentAnswer !== cleanAnswer) {
                 currentAnswer = '';
@@ -435,22 +433,69 @@ async function generateGame(gameType) {
             currentQuote.savedGrid &&
             currentQuote.savedQuote.savedDate === today
         ) {
-            console.log("success load");
             currentGuess = currentQuote.savedQuote.savedGuess;
             theQuote = getQuote(currentQuote.savedQuote.savedQuote);
 
             createGame(theQuote);
             await getWordlist(theQuote.answer);
 
-            gameBoard.innerHTML = currentQuote.savedGrid.gameBoard.innerHTML;
-            keyBoard.innerHTML = currentQuote.savedGrid.keyBoard.innerHTML;
+            answerGrid = [];
 
-            answerGrid = currentQuote.savedGrid.answerGrid;
+            const rows = gameBoard.querySelectorAll('.grid-row');
+
+            rows.forEach(row => {
+                answerGrid.push(
+                    Array.from(row.querySelectorAll('.letter-box'))
+                );
+            });
             colourGrid = currentQuote.savedGrid.colourGrid;
+            currentAnswer = '';
+            const cleanAnswer = theQuote.answer.replace(/\s+/g, '').toUpperCase();
+            for (let i = 0; i < currentGuess; i++) {
+                const guess = answerGrid[i].map(tile => tile.textContent).join('');
+                let letters = cleanAnswer.split('');
+                colourFlip(guess, i, cleanAnswer, letters);
+            }
+            let finaleAnswer = [];
+            for (let i = 0; i < answerGrid[currentGuess-1].length; i++) {
+                finaleAnswer.push(answerGrid[currentGuess-1][i].innerHTML);
+            }
+            finaleAnswer = finaleAnswer.join('');
 
-            gameState = 1;
+            if (answerGrid[currentGuess]) {
+                currentAnswer = answerGrid[currentGuess]
+                    .map(tile => tile.textContent)
+                    .join('');
+            }
+            if (currentGuess === 6 || finaleAnswer === theQuote.answer.toUpperCase()) {
+                gameState = 2;
+
+                const afterQuote = questionEl.innerHTML
+                    .replaceAll(
+                        /(_+)\d*(?:<sub>\d+<\/sub>)?/g,
+                        (match, underscores) => {
+                            return underscores.length > 3
+                                ? "<u>" + theQuote.answer + "</u>"
+                                : match;
+                        }
+                    )
+                    .replace(/#(-+)/g, "#" + theQuote.number);
+
+                const afterFlavour = quoteFl.textContent.replaceAll(
+                    /(_+)/g,
+                    (match, underscores) => {
+                        return underscores.length > 3
+                            ? "<u>" + theQuote.answer + "</u>"
+                            : match;
+                    }
+                );
+
+                if (questionEl) questionEl.innerHTML = afterQuote;
+                if (quoteFl) quoteFl.innerHTML = afterFlavour;
+            } else {
+                gameState = 1;
+            }
         } else {
-            console.log("fail log");
             theQuote = getQuote(gameType);
 
             createGame(theQuote);
@@ -481,8 +526,5 @@ async function init() {
     savedQuotes = await getQuotelist();
     await generateGame(1);
 }
-
-
-console.log(localStorage.getItem("test"));
 
 init();
