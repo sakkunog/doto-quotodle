@@ -1,24 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <link href='https://fonts.googleapis.com/css?family=Comic Relief' rel='stylesheet'>
+        <link href="https://fonts.googleapis.com/css?family=Comic+Relief" rel="stylesheet">
         <title>The Quotodle</title>
         <link rel="icon" type="image/png" href="img/star.png">
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
         <div id="game-choice">
+            <!--<div class="combo-div">
+                <img id="daily-star" src="img/star.png">
+                <div id="daily-combo">0x</div>
+            </div>-->
             <button id="daily-btn">Daily</button>
-            <button id="rnd-btn">Random</button>
+            <span style="width:2%;"></span>
+            <button id="rnd-btn" style="background-color: grey;">
+                Random
+            </button>
+            <!--<div class="combo-div">
+                <img id="rand-star" src="img/star.png">
+                <div id="rand-combo">0x</div>
+            </div>-->
         </div>
+
         <div id="top-space">
-            <div id="game-question"><h1>"i love giving people a _____<sub>6</sub>"  - Doto, 2025</h1></div>
+            <h2><div id="game-question">.</div></h2>
             <div id="game-board"></div>
-            <div id="game-flavour"><h3></h3></div>
+            <h4><div id="game-flavour"></div></h4>
         </div>
+
         <div id="btm-space">
             <div id="keyboard"></div>
         </div>
+
+        <script src="script.js"></script>
     </body>
-    <script src="script.js"></script>
 </html>
