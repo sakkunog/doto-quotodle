@@ -44,7 +44,7 @@ let currentWords = ['sakkunmynuts'];
 
 function saveCurrentGrid() {
     const gameData = {
-        savedQuote: [currentGuess, theQuote.number, d],
+        savedQuote: [currentGuess, theQuote.number, today],
         savedGrid: [
             answerGrid,
             colourGrid,
@@ -61,6 +61,7 @@ function saveCurrentGrid() {
 
     localStorage.setItem('gameData', JSON.stringify(gameData));
     console.log("complete saved!");
+    console.log(localStorage.getItem('gameData'));
 }
 
 function loadCurrentGrid() {
@@ -428,12 +429,11 @@ function keyPress(key) {
 async function generateGame(gameType) {
     if (gameState == 0) {
         const currentQuote = loadCurrentGrid();
-        console.log(currentQuote);
         if (
             currentQuote &&
             currentQuote.savedQuote &&
             currentQuote.savedGrid &&
-            currentQuote.savedQuote.savedDate === d
+            currentQuote.savedQuote.savedDate === today
         ) {
             console.log("success load");
             currentGuess = currentQuote.savedQuote.savedGuess;
