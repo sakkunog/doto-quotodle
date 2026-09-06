@@ -37,9 +37,13 @@
 
 #game-choice {
     display: flex;
-    gap: 1%;
-    padding: 2%;
+    margin: 10px;
     justify-content: center;
+}
+
+#game-choice button {
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 #top-space {
@@ -48,7 +52,6 @@
     align-items: center;
     margin-left: 15%;
     margin-right: 15%;
-    gap: 25px;
 }
 
 #btm-space {
@@ -85,6 +88,22 @@
     background-color: transparent;
 }
 
+.combo-div {
+    position: relative;
+}
+
+.combo-div img {
+    display: block;
+    height: 70px;
+}
+
+.combo-div div {
+    position: absolute;
+    top: 50%;
+    left: 55%;
+    transform: translate(-50%, -50%);
+}
+
 #keyboard {
     gap: 10px;
     align-items: center;
@@ -112,5 +131,5 @@ body {
 }
 
 * {
-    font-family: 'Comic Relief';font-size: 22px;
+    font-family: 'Comic Relief';font-size: auto;
 }
