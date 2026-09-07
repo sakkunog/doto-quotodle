@@ -1,3 +1,4 @@
+const gameChoice = document.getElementById('#game-choice');
 const gameBoard = document.getElementById('game-board');
 const keyBoard = document.getElementById('keyboard');
 const questionEl = document.querySelector('#game-question');
@@ -302,6 +303,14 @@ document.addEventListener('click', event => {
     if (event.target.classList.contains('key-button')) {
         keyPress(event.target.textContent);
     }
+    if (event.target.classList.contains('button')) {
+        if (event.target.innerHTML == "Daily") {
+            generateGame(today);
+        } else {
+            generateGame();
+        }
+    }
+    event.target.blur();
 });
 
 function colourFlip(currentAnswer, thisGuess, cleanAnswer, letters) {
@@ -524,7 +533,7 @@ async function generateGame(gameType) {
 
 async function init() {
     savedQuotes = await getQuotelist();
-    await generateGame(1);
+    await generateGame(today);
 }
 
 init();
