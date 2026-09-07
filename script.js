@@ -106,6 +106,11 @@ function loadCurrentGrid() {
     };
 }
 
+function updateCombo() {
+    const counter = document.getElementById('rand-combo');
+    counter.innerHTML = String(currentCombo) + "x";
+}
+
 async function getQuotelist() {
     try {
         const url = await fetch("https://docs.google.com/spreadsheets/d/1pWXDY6PTEJTpWq10yV4XQdiR-ZE6lyyzfcynk7Owt-0/export?format=tsv&gid=1876830211");
@@ -371,6 +376,9 @@ function keyPress(key) {
 
             if (currentAnswer !== cleanAnswer) {
                 currentAnswer = '';
+                if (currentGuess == 5) {
+                    currentCombo = 0;
+                }
             } else {
                 const tile = answerGrid[thisGuess][0];
 
@@ -404,10 +412,10 @@ function keyPress(key) {
                     if (questionEl) questionEl.innerHTML = afterQuote;
                     if (quoteFl) quoteFl.innerHTML = afterFlavour;
                 }, ((currentAnswer.length - 1) * 200) + 600);
-
                 completedQuotes.push(theQuote.number);
+                currentCombo += 1;
                 gameState = 2;
-            }
+            } updateCombo();
             currentGuess += 1;
             saveCurrentGrid();
         } else {
@@ -514,6 +522,10 @@ async function generateGame(gameType) {
             createKeyboard(keyBoard);
 
             gameState = 1;
+        }
+        if (currentQuote.savedUser.savedCombo) {
+            currentCombo = currentQuote.savedUser.savedCombo;
+            updateCombo();
         }
     } else if (gameState == 2) {
         theQuote = getQuote(gameType);
