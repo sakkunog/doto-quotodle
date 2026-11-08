@@ -261,7 +261,7 @@ function createGame(theQuote) {
 
     const finalQuestionText = `Quote #${'-'.repeat(theQuote.number.length)} <br> ${formattedQuote} <br><br> - ${theQuote.author}, ${theQuote.year}`;
 
-    const formattedFlavour = theQuote.context.replaceAll(
+    const formattedFlavour = (theQuote.context || '').replaceAll(
         '$$ITEM$$',
         '_'.repeat(theQuote.answer.length)
     );
