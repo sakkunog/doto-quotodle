@@ -46,6 +46,14 @@
     margin-bottom: auto;
 }
 
+.button:disabled,
+#rnd-btn:disabled,
+#daily-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: initial;
+}
+
 #top-space {
     display: flex;
     flex-direction: column;
@@ -102,6 +110,15 @@
     top: 50%;
     left: 55%;
     transform: translate(-50%, -50%);
+}
+
+#quote-counter {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+    margin: 10px 0 20px 0;
+    text-align: center;
+    font-family: 'Comic Relief';
 }
 
 #keyboard {
