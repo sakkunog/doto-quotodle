@@ -3,6 +3,8 @@ const gameBoard = document.getElementById('game-board');
 const keyBoard = document.getElementById('keyboard');
 const questionEl = document.querySelector('#game-question');
 const quoteFl = document.querySelector('#game-flavour');
+const rndBtn = document.getElementById('rnd-btn');
+const dailyBtn = document.getElementById('daily-btn');
 
 const d = new Date();
 const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -12,6 +14,7 @@ let completedQuotes = [];
 let savedQuotes = [];
 let dailyCombo = 0;
 let currentCombo = 0;
+let isRandomActive = false;
 
 let gameState = 0;
 
@@ -43,6 +46,18 @@ let listWords = [
 
 let currentWords = ['sakkunmynuts'];
 
+function updateQuoteCounter() {
+    const counterElement = document.getElementById("quote-counter");
+    if (!counterElement || !savedQuotes.length) return;
+
+    const y = savedQuotes.length;
+    const x = completedQuotes.filter(completedId => 
+        savedQuotes.some(row => row[0] === completedId.toString())
+    ).length;
+
+    counterElement.textContent = `Quotes: ${x}/${y}`;
+}
+
 function saveCurrentGrid() {
     const gameData = {
         savedQuote: [currentGuess, theQuote.number, today],
@@ -52,7 +67,7 @@ function saveCurrentGrid() {
             keyBoard.innerHTML,
             gameBoard.innerHTML
         ],
-        savedUser: [username, dailyCombo, currentCombo],
+        savedUser: [username, dailyCombo, currentCombo, today],
         completedQuotes
     };
 
@@ -97,7 +112,7 @@ function loadCurrentGrid() {
         savedUser: savedUser
             ? {
                 username: savedUser[0],
-                savedDaily: savedUser[1],
+                savedDaily: savedUser[3] || savedUser[1],
                 savedCombo: savedUser[2]
             }
             : null,
@@ -152,7 +167,8 @@ async function getQuotelist() {
 function getQuote(aNumber) {
     let setIndex;
 
-    if (!savedQuotes.length) {
+    if (!savedQuotes.length || aNumber == "0") {
+        updateQuoteCounter();
         return {
             number: "0",
             author: "Unknown",
@@ -163,23 +179,52 @@ function getQuote(aNumber) {
         };
     }
 
-    if (aNumber) {
+    if (aNumber === today) {
+        let hash = 0;
+        for (let i = 0; i < today.length; i++) {
+            hash = today.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        let hashIndex = Math.abs(hash) % savedQuotes.length;
+        
+        let attempts = 0;
+        while (completedQuotes.includes(savedQuotes[hashIndex][0]) && attempts < savedQuotes.length) {
+            hashIndex = (hashIndex + 1) % savedQuotes.length;
+            attempts++;
+        }
+        setIndex = hashIndex;
+    } else if (aNumber && aNumber != "-1") {
         const number = aNumber.toString();
 
         if (savedQuotes.some(row => row[0] === number)) {
             setIndex = savedQuotes.findIndex(row => row[0] === number);
         } else {
             let hash = 0;
-
             for (let i = 0; i < today.length; i++) {
                 hash = today.charCodeAt(i) + ((hash << 5) - hash);
             }
-
             setIndex = Math.abs(hash) % savedQuotes.length;
         }
     } else {
-        setIndex = Math.floor(Math.random() * savedQuotes.length);
+        const availableQuotes = savedQuotes.filter(row => !completedQuotes.includes(row[0]));
+
+        if (availableQuotes.length === 0 || aNumber == "-1") {
+            updateQuoteCounter();
+            return {
+                number: "-1",
+                author: "sakkundeez____ <3",
+                year: "whatever year it is",
+                quote: "youve completed all available quotes! <br> youll have to wait until more is added i think",
+                answer: "nuts",
+                context: "there is no context"
+            };
+        }
+
+        const randomIndex = Math.floor(Math.random() * availableQuotes.length);
+        const selectedQuoteRow = availableQuotes[randomIndex];
+        setIndex = savedQuotes.findIndex(row => row[0] === selectedQuoteRow[0]);
     }
+
+    updateQuoteCounter();
 
     const [quoteNumber, author, year, quote, currentAnswer, flavour] = savedQuotes[setIndex];
 
@@ -310,9 +355,10 @@ document.addEventListener('click', event => {
     }
     if (event.target.classList.contains('button')) {
         if (event.target.innerHTML == "Daily") {
+            if (dailyBtn && dailyBtn.disabled) return;
             generateGame(today);
         } else {
-            generateGame();
+            generateGame(undefined);
         }
     }
     event.target.blur();
@@ -322,30 +368,30 @@ function colourFlip(currentAnswer, thisGuess, cleanAnswer, letters) {
     for (let i = 0; i < currentAnswer.length; i++) {
         if (currentAnswer[i] === cleanAnswer[i]) {
             colourGrid[thisGuess][i] = "MediumSeaGreen";
-                letters.splice(letters.indexOf(currentAnswer[i]), 1);
-            }
+            letters.splice(letters.indexOf(currentAnswer[i]), 1);
+        }
     }
 
     for (let i = 0; i < currentAnswer.length; i++) {
         if (colourGrid[thisGuess][i] === "MediumSeaGreen") continue;
 
-            const char = currentAnswer[i];
+        const char = currentAnswer[i];
 
-            if (letters.includes(char)) {
-                colourGrid[thisGuess][i] = "Orange";
-                letters.splice(letters.indexOf(char), 1);
-            } else {
-                colourGrid[thisGuess][i] = "DimGray";
+        if (letters.includes(char)) {
+            colourGrid[thisGuess][i] = "Orange";
+            letters.splice(letters.indexOf(char), 1);
+        } else {
+            colourGrid[thisGuess][i] = "DimGray";
 
-                const keyBtn = Array.from(
-                    keyBoard.querySelectorAll('.key-button')
-                ).find(b => b.textContent === char);
-
-                if (keyBtn) {
-                    keyBtn.style.backgroundColor = "DimGray";
-                }
+            const keyBtn = Array.from(
+                keyBoard.querySelectorAll('.key-button')
+            ).find(b => b.textContent === char);
+            
+            if (keyBtn && !theQuote.answer.toUpperCase().includes(currentAnswer[i])) {
+                keyBtn.style.backgroundColor = "DimGray";
             }
         }
+    }
 
     for (let i = 0; i < currentAnswer.length; i++) {
         const tile = answerGrid[thisGuess][i];
@@ -374,10 +420,23 @@ function keyPress(key) {
 
             colourFlip(currentAnswer, thisGuess, cleanAnswer, letters);
 
+            let hash = 0;
+            for (let i = 0; i < today.length; i++) {
+                hash = today.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let dailyIndex = Math.abs(hash) % savedQuotes.length;
+            let targetDailyNumber = savedQuotes[dailyIndex][0];
+
             if (currentAnswer !== cleanAnswer) {
                 currentAnswer = '';
                 if (currentGuess == 5) {
                     currentCombo = 0;
+                    if (rndBtn) rndBtn.disabled = false;
+                    isRandomActive = false;
+                    
+                    if (theQuote.number === targetDailyNumber) {
+                        if (dailyBtn) dailyBtn.disabled = true;
+                    }
                 }
             } else {
                 const tile = answerGrid[thisGuess][0];
@@ -412,10 +471,22 @@ function keyPress(key) {
                     if (questionEl) questionEl.innerHTML = afterQuote;
                     if (quoteFl) quoteFl.innerHTML = afterFlavour;
                 }, ((currentAnswer.length - 1) * 200) + 600);
-                completedQuotes.push(theQuote.number);
+
+                if (!completedQuotes.includes(theQuote.number)) {
+                    completedQuotes.push(theQuote.number);
+                }
                 currentCombo += 1;
                 gameState = 2;
-            } updateCombo();
+                
+                if (rndBtn) rndBtn.disabled = false;
+                isRandomActive = false;
+
+                if (theQuote.number === targetDailyNumber) {
+                    if (dailyBtn) dailyBtn.disabled = true;
+                }
+            } 
+            updateCombo();
+            updateQuoteCounter();
             currentGuess += 1;
             saveCurrentGrid();
         } else {
@@ -442,14 +513,23 @@ function keyPress(key) {
 }
 
 async function generateGame(gameType) {
+    if (gameType === undefined && isRandomActive) return;
+
+    if (gameType === undefined) {
+        isRandomActive = true;
+        if (rndBtn) rndBtn.disabled = true;
+    }
+
     if (gameState == 0) {
         const currentQuote = loadCurrentGrid();
         if (
             currentQuote &&
             currentQuote.savedQuote &&
             currentQuote.savedGrid &&
-            currentQuote.savedQuote.savedDate === today
+            currentQuote.savedQuote.savedDate === today &&
+            gameType === today
         ) {
+            completedQuotes = currentQuote.completedQuotes || [];
             currentGuess = currentQuote.savedQuote.savedGuess;
             theQuote = getQuote(currentQuote.savedQuote.savedQuote);
 
@@ -509,6 +589,8 @@ async function generateGame(gameType) {
 
                 if (questionEl) questionEl.innerHTML = afterQuote;
                 if (quoteFl) quoteFl.innerHTML = afterFlavour;
+                
+                if (dailyBtn) dailyBtn.disabled = true;
             } else {
                 gameState = 1;
             }
@@ -522,8 +604,15 @@ async function generateGame(gameType) {
             createKeyboard(keyBoard);
 
             gameState = 1;
+            
+            if (gameType === today) {
+                const todayQuoteObj = getQuote(today);
+                if (completedQuotes.includes(todayQuoteObj.number)) {
+                    if (dailyBtn) dailyBtn.disabled = true;
+                }
+            }
         }
-        if (currentQuote.savedUser.savedCombo) {
+        if (currentQuote && currentQuote.savedUser && currentQuote.savedUser.savedCombo) {
             currentCombo = currentQuote.savedUser.savedCombo;
             updateCombo();
         }
@@ -540,12 +629,32 @@ async function generateGame(gameType) {
         currentAnswer = "";
 
         gameState = 1;
+        
+        isRandomActive = false;
+        if (rndBtn) rndBtn.disabled = false;
+        
+        if (gameType === today) {
+            const todayQuoteObj = getQuote(today);
+            if (completedQuotes.includes(todayQuoteObj.number)) {
+                if (dailyBtn) dailyBtn.disabled = true;
+            } else {
+                if (dailyBtn) dailyBtn.disabled = false;
+            }
+        }
     }
+    updateQuoteCounter();
 }
 
 async function init() {
     savedQuotes = await getQuotelist();
     await generateGame(today);
+    
+    const todayQuoteObj = getQuote(today);
+    if (completedQuotes.includes(todayQuoteObj.number)) {
+        if (dailyBtn) dailyBtn.disabled = true;
+    }
+    
+    updateQuoteCounter();
 }
 
 init();
