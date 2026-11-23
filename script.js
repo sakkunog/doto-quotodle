@@ -522,6 +522,15 @@ async function generateGame(gameType) {
 
     if (gameState == 0) {
         const currentQuote = loadCurrentGrid();
+
+        if (currentQuote) {
+            completedQuotes = currentQuote.completedQuotes || [];
+            if (currentQuote.savedUser && currentQuote.savedUser.savedCombo) {
+                currentCombo = currentQuote.savedUser.savedCombo;
+                updateCombo();
+            }
+        }
+
         if (
             currentQuote &&
             currentQuote.savedQuote &&
@@ -529,7 +538,6 @@ async function generateGame(gameType) {
             currentQuote.savedQuote.savedDate === today &&
             gameType === today
         ) {
-            completedQuotes = currentQuote.completedQuotes || [];
             currentGuess = currentQuote.savedQuote.savedGuess;
             theQuote = getQuote(currentQuote.savedQuote.savedQuote);
 
@@ -611,10 +619,6 @@ async function generateGame(gameType) {
                     if (dailyBtn) dailyBtn.disabled = true;
                 }
             }
-        }
-        if (currentQuote && currentQuote.savedUser && currentQuote.savedUser.savedCombo) {
-            currentCombo = currentQuote.savedUser.savedCombo;
-            updateCombo();
         }
     } else if (gameState == 2) {
         theQuote = getQuote(gameType);
